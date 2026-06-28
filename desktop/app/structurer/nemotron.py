@@ -24,6 +24,7 @@ from ..pipeline.anonymizer import Anonymizer, AnonymizerConfig
 from ..pipeline.prompts import SYSTEM_PROMPT_TEXT, USER_INSTRUCTION_TEXT
 from ..pipeline.text_sources import FuenteTexto
 from .base import StructureContext, StructurerError
+from .merge import merge_results, necesita_troceo, trocear
 
 log = logging.getLogger("money_chwats.nemotron")
 
@@ -47,6 +48,17 @@ class NemotronStructurer:
         )
 
     async def structure(
+        self, fuente: FuenteTexto, *, context: StructureContext
+    ) -> ExtractionResult:
+        # Chats largos: trocear y unir (map-reduce).
+        if necesita_troceo(fuente):
+            trozos = trocear(fuente)
+            log.info("Nemotron: chat largo → %d trozos", len(trozos))
+            results = [await self._structure_one(t, context=context) for t in trozos]
+            return merge_results(results)
+        return await self._structure_one(fuente, context=context)
+
+    async def _structure_one(
         self, fuente: FuenteTexto, *, context: StructureContext
     ) -> ExtractionResult:
         api_key = self.cloud.resolved_api_key
