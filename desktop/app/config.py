@@ -82,6 +82,17 @@ class PrivacyConfig(BaseModel):
     redact_names: bool = True
 
 
+class ExportConfig(BaseModel):
+    """Importación por 'Exportar chat'.
+
+    owner_name: tu nombre tal como aparece en los chats (para marcar tus mensajes
+    como 'negocio'). inbox_dir: carpeta que el vigilante observa (vacío = desactivado).
+    """
+
+    owner_name: str = ""
+    inbox_dir: str = ""
+
+
 class ExtractionConfig(BaseModel):
     """Qué backend estructura el texto, y umbral de revisión.
 
@@ -102,6 +113,7 @@ class AppConfig(BaseModel):
     cloud: CloudConfig = Field(default_factory=CloudConfig)
     privacy: PrivacyConfig = Field(default_factory=PrivacyConfig)
     extraction: ExtractionConfig = Field(default_factory=ExtractionConfig)
+    export: ExportConfig = Field(default_factory=ExportConfig)
 
 
 def _find_config_file() -> Path | None:

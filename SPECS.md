@@ -112,9 +112,26 @@ inválida (cae a reglas), imagen ilegible.
 
 ## Estado actual
 
-- ✅ Captura, lectura OCR, blindaje, reglas, Nemotron y tablas: **funcionando**.
-- 🔜 Doble-check con el texto del DOM de WhatsApp (Fase 2) para corregir errores
-  de lectura y blindar nombres de forma robusta.
+**Giro de rumbo (Export-first):** la vía principal ya NO es la foto+OCR sino
+**"Exportar chat"** de WhatsApp (texto perfecto, historial completo, cero riesgo de
+baneo, escala a miles). El OCR queda como **respaldo** para lo visual. El DOM se
+archivó (su único trabajo —corregir el OCR— ya no hace falta), salvo para la futura
+"lista matriz" (leer la lista de chats).
+
+**✅ Funcionando y probado (29 tests):**
+- **Importar "Exportar chat"** → tablas Clientes/Pedidos (validado con 1.805 mensajes reales).
+- **Detector de multimedia** (cuenta audios/imágenes/videos y avisa para re-exportar).
+- **Vigilante de carpeta** (procesa solo los .txt que sueltes) + **tablero** de avance.
+- Blindaje (seudonimización), analistas reglas/Nemotron/local, columnas nuevas
+  (`telefono_pendiente`, `nickname`, `audios/imagenes/videos_detectados`, `multimedia_pendiente`).
+- OCR optimizado (gris/1x/WebP) como respaldo.
+
+**🔜 Pendiente:**
+- **Lista matriz** (leer la lista de chats por DOM) para el tablero "X/2.000" y modo guiado.
+- **Nemotron para chats largos** (trocear/resumir; hoy un chat de 1.805 msgs es mucho para una sola llamada).
+- **Filtrar** notificaciones de llamada.
+- **Re-importar con multimedia** + **transcripción de audios** (Whisper) para rescatar pedidos en notas de voz.
+- **App instalable** (tray, sin terminal) para clientes finales.
 
 ---
 

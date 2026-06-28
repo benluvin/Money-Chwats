@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from . import __version__
 from .config import get_config
-from .routes import capture, files, health, process
+from .routes import capture, files, health, import_export, process
 
 log = logging.getLogger("money_chwats")
 logging.basicConfig(
@@ -21,6 +21,8 @@ logging.basicConfig(
 
 @asynccontextmanager
 async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
+    import asyncio
+
     cfg = get_config()
     root = cfg.storage.root_path
     root.mkdir(parents=True, exist_ok=True)
@@ -29,7 +31,19 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
         __version__, cfg.server.host, cfg.server.port,
     )
     log.info("Carpeta de datos: %s", root)
+
+    # Vigilante de carpeta (solo si hay buzón configurado).
+    watcher_task = None
+    if cfg.export.inbox_dir:
+        from .pipeline.watcher import watch_loop
+        from .structurer.factory import build_structurer
+
+        watcher_task = asyncio.create_task(watch_loop(cfg, build_structurer))
+
     yield
+
+    if watcher_task:
+        watcher_task.cancel()
 
 
 def create_app() -> FastAPI:
@@ -55,6 +69,7 @@ def create_app() -> FastAPI:
     app.include_router(capture.router, tags=["capture"])
     app.include_router(files.router, tags=["files"])
     app.include_router(process.router, tags=["process"])
+    app.include_router(import_export.router, tags=["import"])
     return app
 
 

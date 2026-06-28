@@ -67,8 +67,10 @@ class ExtractionResult(BaseModel):
 CLIENTES_COLUMNS: list[str] = [
     "cliente_id",
     "nombre",
+    "nickname",
     "telefono_completo",
     "telefono_redactado",
+    "telefono_pendiente",
     "primer_mensaje_fecha",
     "ultimo_mensaje_fecha",
     "dias_activos_visibles",
@@ -86,6 +88,10 @@ CLIENTES_COLUMNS: list[str] = [
     "monto_total_pedidos",
     "confianza_extraccion",
     "requiere_revision",
+    "audios_detectados",
+    "imagenes_detectados",
+    "videos_detectados",
+    "multimedia_pendiente",
     "ruta_imagen_evidencia",
     "fecha_captura",
     "modelo_llm",
@@ -151,15 +157,27 @@ def cliente_row_dict(
     fecha_captura: datetime,
     modelo_llm: str,
     metodo_extraccion: str = "ocr",
+    nickname: str = "",
+    telefono_pendiente: bool = False,
+    audios_detectados: int = 0,
+    imagenes_detectados: int = 0,
+    videos_detectados: int = 0,
 ) -> dict[str, str]:
     dias = 0
     if extracted.primer_mensaje_fecha and extracted.ultimo_mensaje_fecha:
         dias = (extracted.ultimo_mensaje_fecha - extracted.primer_mensaje_fecha).days + 1
+    multimedia_pendiente = (audios_detectados + imagenes_detectados + videos_detectados) > 0
     raw = {
         "cliente_id": cliente_id,
         "nombre": extracted.nombre or "",
+        "nickname": nickname,
         "telefono_completo": telefono_completo,
         "telefono_redactado": telefono_redactado,
+        "telefono_pendiente": telefono_pendiente,
+        "audios_detectados": audios_detectados,
+        "imagenes_detectados": imagenes_detectados,
+        "videos_detectados": videos_detectados,
+        "multimedia_pendiente": multimedia_pendiente,
         "primer_mensaje_fecha": extracted.primer_mensaje_fecha,
         "ultimo_mensaje_fecha": extracted.ultimo_mensaje_fecha,
         "dias_activos_visibles": dias,

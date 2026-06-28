@@ -33,5 +33,9 @@ def ocr_dir(root: Path) -> Path:
     return ensure_dir(root / "data" / "ocr")
 
 
+def exports_dir(root: Path) -> Path:
+    return ensure_dir(root / "data" / "exports")
+
+
 def logs_dir(root: Path) -> Path:
     return ensure_dir(root / "logs")

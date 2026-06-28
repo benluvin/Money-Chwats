@@ -137,7 +137,13 @@ def parse_export(text: str, *, owner_name: str | None = None) -> ExportResult:
         cur_sender, cur_text, cur_is_media = None, [], False
 
     for raw in lines:
-        resto = _match_header(raw)
+        # WhatsApp (iOS) antepone marcas invisibles (‎, etc.) antes del "[".
+        # Las quitamos del inicio para poder detectar el encabezado.
+        idx = 0
+        while idx < len(raw) and unicodedata.category(raw[idx]) == "Cf":
+            idx += 1
+        probe = raw[idx:]
+        resto = _match_header(probe)
         if resto is not None:
             flush()
             sm = _SENDER_SPLIT.match(resto)
