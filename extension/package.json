@@ -1,0 +1,17 @@
+{
+  "name": "money-chwats-extension",
+  "version": "0.1.0",
+  "description": "Captura reactiva de WhatsApp Web → servicio Money Chwats local.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "watch": "node build.mjs --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.287",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.6.3"
+  }
+}

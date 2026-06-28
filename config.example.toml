@@ -1,0 +1,43 @@
+# Money Chwats — configuración del servicio desktop.
+# Copia este archivo como `desktop/config.toml` y ajusta lo que necesites.
+
+[server]
+host = "127.0.0.1"
+port = 5000
+
+[storage]
+# Carpeta raíz donde se guardan capturas, CSVs y logs.
+# Soporta ~ y variables de entorno. Ruta absoluta dentro del proyecto.
+root = "/Users/daniel/Desktop/Money Chwats/capturas"
+
+[csv]
+separator = ";"
+encoding = "utf-8-sig"   # UTF-8 con BOM, Excel lo abre con tildes correctas
+decimal = "."
+
+[locale]
+default_currency = "COP"
+default_language = "es"
+default_country_code = "+57"   # Colombia, para parsear JIDs sin código
+
+[llm]
+# Habilita el procesamiento con LLM. Si está en false, las capturas se guardan
+# pero no se extrae nada (clientes.csv y pedidos.csv no se actualizan).
+enabled = true
+# URL del runtime de Ollama (instálalo desde https://ollama.com/download).
+base_url = "http://127.0.0.1:11434"
+# Modelo multimodal a usar. Recomendado: qwen2.5vl:7b (buen español, ~5GB).
+# Alternativa más liviana: qwen2.5vl:3b (~2GB). Hace falta `ollama pull <modelo>` una vez.
+model = "qwen2.5vl:7b"
+timeout_seconds = 300
+# Si la confianza extraída es menor a este umbral, la fila se marca con requiere_revision=true.
+review_threshold = 0.6
+
+[pairing]
+# Tiempo de vida del código de emparejamiento en segundos.
+code_ttl_seconds = 60
+
+[security]
+# Si está en true, rechaza requests cuyo header Origin no corresponda
+# al chrome-extension ID emparejado.
+strict_origin_check = true

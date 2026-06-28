@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Node / Extension
+node_modules/
+extension/dist/
+
+# Config local (puede contener secrets)
+config.toml
+desktop/config.toml
+
+# Datos generados (¡contienen info real de clientes! NO subir)
+capturas/
+captures/
+~/CapturasWhatsApp/
+conversacion_*.md
+
+# Memoria/sesiones locales de Claude
+.claude/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db

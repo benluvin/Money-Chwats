@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="popup.css" />
+    <title>Money Chwats</title>
+  </head>
+  <body>
+    <header class="hdr">
+      <strong>Money Chwats</strong>
+      <span id="status-dot" class="dot dot-unknown" aria-label="estado"></span>
+    </header>
+
+    <main>
+      <section class="sec">
+        <div class="row">
+          <span>Servicio</span>
+          <code id="service-url">http://127.0.0.1:5000</code>
+        </div>
+        <div class="row">
+          <span>Estado</span>
+          <span id="status-text">comprobando…</span>
+        </div>
+        <div class="row">
+          <span>IA local</span>
+          <span id="llm-text">—</span>
+        </div>
+      </section>
+
+      <section class="sec">
+        <button id="btn-capture" class="btn primary" disabled>Capturar pestaña</button>
+        <p class="hint">Atajo: <kbd>⌘⇧S</kbd> / <kbd>Ctrl⇧S</kbd>.</p>
+      </section>
+
+      <section class="sec log">
+        <div id="log"></div>
+      </section>
+    </main>
+
+    <script src="popup.js" type="module"></script>
+  </body>
+</html>
