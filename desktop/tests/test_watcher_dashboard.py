@@ -24,7 +24,7 @@ def _cfg(tmp: Path, inbox: Path) -> AppConfig:
 def test_vigilante_procesa_y_no_repite(tmp_path: Path):
     inbox = tmp_path / "buzon"
     inbox.mkdir()
-    (inbox / "Chat con Cliente Z.txt").write_text(EXPORT, encoding="utf-8")
+    (inbox / "Chat de WhatsApp con Cliente Z.txt").write_text(EXPORT, encoding="utf-8")
     cfg = _cfg(tmp_path, inbox)
 
     # Hay 1 pendiente
@@ -42,7 +42,7 @@ def test_vigilante_procesa_y_no_repite(tmp_path: Path):
 def test_dashboard_resume(tmp_path: Path):
     inbox = tmp_path / "buzon"
     inbox.mkdir()
-    (inbox / "Chat con Cliente Z.txt").write_text(EXPORT, encoding="utf-8")
+    (inbox / "Chat de WhatsApp con Cliente Z.txt").write_text(EXPORT, encoding="utf-8")
     cfg = _cfg(tmp_path, inbox)
     asyncio.run(scan_inbox_once(cfg, RulesStructurer()))
 

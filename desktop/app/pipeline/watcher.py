@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import re
 from datetime import datetime
 from pathlib import Path
 
@@ -21,6 +22,18 @@ from .import_pipeline import import_export_file
 log = logging.getLogger("money_chwats.watcher")
 
 POLL_SECONDS = 4
+
+# Patrón de nombre de archivo de "Exportar chat" de WhatsApp. Sirve para que el
+# vigilante pueda observar una carpeta compartida (p. ej. Descargas) sin procesar
+# .txt ajenos. WhatsApp nombra los exports así:
+#   - iOS:        "_chat.txt", "_chat 2.txt"
+#   - Android ES: "Chat de WhatsApp con <nombre>.txt"
+#   - Android EN: "WhatsApp Chat with <name>.txt"
+_EXPORT_WHATSAPP_RE = re.compile(r"(^_chat\b)|(whatsapp)", re.IGNORECASE)
+
+
+def es_export_whatsapp(f: Path) -> bool:
+    return bool(_EXPORT_WHATSAPP_RE.search(f.name))
 
 
 def _state_path(cfg: AppConfig) -> Path:
@@ -58,7 +71,10 @@ def pending_files(cfg: AppConfig) -> list[Path]:
         return []
     state = load_state(cfg)
     done = set(state.get("procesados", {}).keys())
-    return [f for f in sorted(folder.glob("*.txt")) if _key(f) not in done]
+    return [
+        f for f in sorted(folder.glob("*.txt"))
+        if es_export_whatsapp(f) and _key(f) not in done
+    ]
 
 
 async def scan_inbox_once(cfg: AppConfig, structurer: Structurer) -> list[dict]:
