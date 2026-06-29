@@ -8,9 +8,12 @@ venv/
 .ruff_cache/
 .mypy_cache/
 
-# Node / Extension
+# Node / Electron / Extension
 node_modules/
 extension/dist/
+dist/
+dist-electron/
+release/
 
 # Config local (puede contener secrets)
 config.toml

@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from . import __version__
 from .config import get_config
-from .routes import capture, files, health, import_export, process
+from .routes import capture, data, files, health, import_export, process
 
 log = logging.getLogger("money_chwats")
 logging.basicConfig(
@@ -54,11 +54,10 @@ def create_app() -> FastAPI:
         lifespan=_lifespan,
     )
 
-    # CORS abierto a cualquier chrome-extension. Solo escuchamos en 127.0.0.1,
-    # así que el alcance ya está limitado a la máquina del usuario.
+    # CORS: extensión Chrome + Electron (localhost dev y app empaquetada).
     app.add_middleware(
         CORSMiddleware,
-        allow_origin_regex=r"^chrome-extension://[a-z0-9]+$",
+        allow_origin_regex=r"^(chrome-extension://[a-z0-9]+|http://localhost:\d+|app://.*)$",
         allow_methods=["GET", "POST", "OPTIONS"],
         allow_headers=["Content-Type"],
         allow_credentials=False,
@@ -70,6 +69,7 @@ def create_app() -> FastAPI:
     app.include_router(files.router, tags=["files"])
     app.include_router(process.router, tags=["process"])
     app.include_router(import_export.router, tags=["import"])
+    app.include_router(data.router, tags=["data"])
     return app
 
 
