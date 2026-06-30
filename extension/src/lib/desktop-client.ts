@@ -21,6 +21,8 @@ export interface CapturePayload {
   captured_at: string;
   tab_url: string | null;
   tab_title: string | null;
+  /** Nombre del encabezado de la conversación (DOM), exacto. */
+  contact_name?: string | null;
   /** Una o varias PNG en base64. El desktop las une verticalmente en una sola imagen. */
   screenshot_parts_b64: string[];
 }

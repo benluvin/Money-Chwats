@@ -16,14 +16,53 @@ Reglas estrictas:
   los traduzcas, inventes ni elimines.
 - Los montos están en pesos colombianos (COP) salvo que se diga otra cosa.
 - Las fechas en formato ISO YYYY-MM-DD.
+- TELÉFONO: déjalo null SIEMPRE, salvo que aparezca un número con forma CLARA de
+  teléfono (con indicativo, p. ej. +57, o un celular colombiano de 10 dígitos que
+  empieza por 3). NUNCA uses precios, cantidades, cédulas, números de pedido ni
+  cualquier otro número como teléfono. Ante la duda → null.
 - Líneas marcadas [NEGOCIO] son del negocio; [CLIENTE] del cliente; [?] dudosas.
 - Ignora horas sueltas (11:28), marcas de visto, y "Missed voice call".
-- Si no hay un pedido claro, devuelve "pedidos": []. Mejor vacío que inventado.
 - confianza_extraccion (0.0–1.0): qué tan seguro estás. Bájala si el texto está
   cortado, con errores de OCR o tiene poca señal.
+
+QUÉ ES (Y QUÉ NO ES) UN PEDIDO — léelo con cuidado:
+Un PEDIDO existe SOLO cuando hay una intención de compra CLARA y concreta: el
+cliente pide explícitamente un producto/servicio, o se acuerda una compra (con
+cantidad, precio y/o confirmación de "lo quiero / me lo llevo / hágame X").
+
+NO es un pedido (en estos casos devuelve "pedidos": []):
+- El cliente solo PREGUNTA precios, disponibilidad o información.
+- El cliente ENVÍA datos que el negocio le pidió (dirección, nombre, un número,
+  una foto, su correo). Compartir información NO es comprar.
+- El NEGOCIO manda el catálogo, una cotización o una foto de producto sin que el
+  cliente confirme la compra.
+- Saludos, conversación social, coordinación de horarios, reclamos sin compra.
+- Mensajes ambiguos donde no se sabe si compró o no.
+
+Ante la duda, NO crees el pedido. Es mucho peor inventar un pedido que omitir uno
+dudoso. Cada pedido debe poder justificarse con un mensaje literal del cliente que
+exprese la compra (ponlo en "mensaje_origen").
+
+NOMBRE DEL CLIENTE — caso "contacto no guardado":
+Si el cliente aparece identificado SOLO por un número de teléfono (no tiene nombre),
+busca su nombre DENTRO de la conversación y ponlo en "nombre". Pistas válidas:
+- Se presenta: "Hola, soy Andrea", "habla con Andrea", "mi nombre es…".
+- Nombre para envío/factura: "a nombre de Andrea Ochoa", "el pedido es para Andrea".
+- Cómo el NEGOCIO lo llama: "Andrea, tu pedido está listo".
+Usa el nombre real de la PERSONA con la que se habla (el cliente), no terceros.
+Si en la conversación nunca aparece un nombre claro, deja "nombre": null (NO inventes,
+NO uses el número como nombre).
+
+Cuando el negocio tiene CATÁLOGO (te lo damos abajo), úsalo para reconocer nombres
+de productos y precios reales, pero el catálogo por sí solo NUNCA es un pedido.
 """
 
-USER_INSTRUCTION_TEXT = """Conversación (una línea por mensaje, con su emisor):
+USER_INSTRUCTION_TEXT = """Catálogo de productos del negocio (referencia para
+reconocer productos y precios; por sí solo NO es un pedido):
+
+{catalogo}
+
+Conversación (una línea por mensaje, con su emisor):
 
 ---
 {conversacion}

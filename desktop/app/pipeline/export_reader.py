@@ -76,6 +76,7 @@ class ExportResult:
     fuente: FuenteTexto
     media: MediaCounts
     nombre_contacto: str | None = None
+    telefono_contacto: str | None = None  # solo si el contacto NO está guardado
     mensajes: int = 0
     warnings: list[str] = field(default_factory=list)
 
@@ -167,11 +168,16 @@ def parse_export(text: str, *, owner_name: str | None = None) -> ExportResult:
 
     # El contacto = el remitente más frecuente que NO es el dueño.
     nombre_contacto = None
+    telefono_contacto = None
     if senders:
         candidatos = {s: n for s, n in senders.items()
                       if not (owner_norm and _strip_invisibles(s).lower() == owner_norm)}
         if candidatos:
             nombre_contacto = max(candidatos, key=candidatos.get)
+            # Si el "nombre" del contacto es en realidad un número (contacto NO
+            # guardado), ese es su teléfono — fuente confiable.
+            from ..utils.telefono import normalizar_telefono
+            telefono_contacto = normalizar_telefono(nombre_contacto)
 
     warnings = []
     if mc.hay_multimedia:
@@ -184,6 +190,7 @@ def parse_export(text: str, *, owner_name: str | None = None) -> ExportResult:
         fuente=FuenteTexto(tipo="export", lineas=lineas),
         media=mc,
         nombre_contacto=nombre_contacto,
+        telefono_contacto=telefono_contacto,
         mensajes=len(lineas),
         warnings=warnings,
     )

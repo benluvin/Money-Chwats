@@ -14,6 +14,7 @@ CSV_COLUMNS = [
     "ruta_imagen",
     "url",
     "titulo",
+    "contact_name",
     "procesado",
     "version_schema",
 ]
@@ -24,6 +25,9 @@ class CaptureRequest(BaseModel):
     captured_at: datetime = Field(default_factory=datetime.utcnow)
     tab_url: str | None = None
     tab_title: str | None = None
+    # Nombre leído del ENCABEZADO de la conversación (DOM), exacto. Es la fuente
+    # de verdad del nombre en modo OCR — no se deja a la IA.
+    contact_name: str | None = None
     screenshot_parts_b64: list[str] = Field(
         ...,
         min_length=1,
@@ -40,6 +44,7 @@ class CaptureRow(BaseModel):
     ruta_imagen: str
     url: str = ""
     titulo: str = ""
+    contact_name: str = ""
     procesado: bool = False
     version_schema: str = SCHEMA_VERSION
 
@@ -50,6 +55,7 @@ class CaptureRow(BaseModel):
             "ruta_imagen": self.ruta_imagen,
             "url": self.url or "",
             "titulo": self.titulo or "",
+            "contact_name": self.contact_name or "",
             "procesado": "true" if self.procesado else "false",
             "version_schema": self.version_schema,
         }

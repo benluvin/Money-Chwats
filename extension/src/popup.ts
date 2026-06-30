@@ -109,29 +109,7 @@ function captureLogNode(captureId: string, absPath: string): HTMLElement {
     }
   });
 
-  const a3 = document.createElement("a");
-  a3.href = "#";
-  a3.className = "link";
-  a3.textContent = "procesar con IA ✨";
-  a3.addEventListener("click", async (e) => {
-    e.preventDefault();
-    a3.textContent = "procesando…";
-    a3.style.pointerEvents = "none";
-    try {
-      const r = await ask<{ ok: true; result: ProcessResponse }>({
-        kind: "process",
-        capture_id: captureId,
-      });
-      log(extractionLogNode(r.result), "ok");
-    } catch (err) {
-      log("LLM: " + (err as Error).message, "err");
-    } finally {
-      a3.textContent = "procesar de nuevo ✨";
-      a3.style.pointerEvents = "auto";
-    }
-  });
-
-  wrap.append(a1, document.createTextNode("  ·  "), a2, document.createTextNode("  ·  "), a3);
+  wrap.append(a1, document.createTextNode("  ·  "), a2);
   return wrap;
 }
 
@@ -156,12 +134,22 @@ function escapeHtml(s: string): string {
 async function onCapture(): Promise<void> {
   const btn = $<HTMLButtonElement>("btn-capture");
   btn.disabled = true;
-  btn.textContent = "Capturando…";
+  btn.textContent = "Capturando y analizando…";
   try {
-    const r = await ask<{ ok: true; capture_id: string; png_path_abs: string }>({
-      kind: "capture-now",
-    });
+    const r = await ask<{
+      ok: true;
+      capture_id: string;
+      png_path_abs: string;
+      result?: ProcessResponse;
+      processError?: string;
+    }>({ kind: "capture-now" });
     log(captureLogNode(r.capture_id, r.png_path_abs), "ok");
+    // La IA corre sola en el backend; mostramos su resultado de una vez.
+    if (r.result) {
+      log(extractionLogNode(r.result), "ok");
+    } else if (r.processError) {
+      log("IA: " + r.processError, "err");
+    }
   } catch (e) {
     log("error: " + (e as Error).message, "err");
   } finally {

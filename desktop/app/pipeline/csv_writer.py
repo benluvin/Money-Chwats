@@ -108,6 +108,19 @@ def _append_rows(
     _write_all(csv_path, existing + new_rows, columns, separator, encoding)
 
 
+# Campos que el usuario puede editar a mano y que, si lo hizo, deben PREVALECER
+# sobre lo que detecte la IA al reprocesar el chat.
+_CAMPOS_PROTEGIDOS_MANUAL = (
+    "nombre", "nickname", "telefono_completo", "telefono_redactado",
+    "telefono_pendiente", "estado_relacion", "direccion_principal",
+    "especificaciones_importantes", "etiquetas", "resumen",
+)
+
+
+def _es_verdadero(v: str | None) -> bool:
+    return str(v).strip().lower() in ("true", "1", "sí", "si")
+
+
 def _do_upsert(
     new_row: dict[str, str], columns: list[str], id_column: str, csv_path: Path,
     separator: str, encoding: str,
@@ -116,7 +129,17 @@ def _do_upsert(
     found = False
     for i, r in enumerate(existing):
         if r.get(id_column) == new_row.get(id_column):
-            existing[i] = new_row
+            fusionada = dict(new_row)
+            # fecha_creacion: conservar la original (nunca se reescribe).
+            if r.get("fecha_creacion"):
+                fusionada["fecha_creacion"] = r["fecha_creacion"]
+            # Si el cliente fue editado a mano, sus campos editados prevalecen.
+            if "editado_manualmente" in columns and _es_verdadero(r.get("editado_manualmente")):
+                for col in _CAMPOS_PROTEGIDOS_MANUAL:
+                    if col in columns:
+                        fusionada[col] = r.get(col, "")
+                fusionada["editado_manualmente"] = "true"
+            existing[i] = fusionada
             found = True
             break
     if not found:

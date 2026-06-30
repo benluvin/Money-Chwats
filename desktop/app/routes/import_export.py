@@ -5,15 +5,17 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, HTTPException, status
 from pydantic import BaseModel
 
 from ..config import get_config
-from ..models.extraction import ExtractionResult
 from ..pipeline.dashboard import build_dashboard
-from ..pipeline.import_pipeline import ImportError_, import_export_file
+from ..pipeline.import_pipeline import (
+    ImportError_,
+    analizar_cliente,
+    crear_cliente_base,
+)
 from ..pipeline.watcher import load_state, pending_files, scan_inbox_once
-from ..structurer.base import StructurerError
 from ..structurer.factory import build_structurer
 
 router = APIRouter()
@@ -27,43 +29,56 @@ class ImportRequest(BaseModel):
 class ImportResponse(BaseModel):
     cliente_id: str
     nombre: str
-    nickname: str
-    extraction: ExtractionResult
-    pedidos_added: int
     telefono_pendiente: bool
-    requiere_revision: bool
     media: dict
-    metodo_extraccion: str
-    csv_pending: bool
+    estado_analisis: str = "pendiente"
+
+
+async def _analizar_en_segundo_plano(cliente_id: str) -> None:
+    """Corre el análisis (cascada) sin bloquear la respuesta del /import."""
+    try:
+        await analizar_cliente(get_config(), cliente_id)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Análisis en segundo plano falló para %s: %s", cliente_id, exc)
 
 
 @router.post("/import", response_model=ImportResponse)
-async def import_export(req: ImportRequest) -> ImportResponse:
+async def import_export(req: ImportRequest, bg: BackgroundTasks) -> ImportResponse:
     cfg = get_config()
     src = Path(req.path).expanduser()
     if not src.is_file():
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"Archivo no existe: {src}")
 
-    structurer = build_structurer(cfg)
+    # FASE 1 (instantánea): crea el cliente con datos deterministas.
     try:
-        out = await import_export_file(cfg, src, structurer)
+        base = await crear_cliente_base(cfg, src)
     except ImportError_ as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
-    except StructurerError as exc:
-        raise HTTPException(status.HTTP_502_BAD_GATEWAY, str(exc)) from exc
+
+    # FASE 2 (segundo plano): la cascada rellena pedidos + interpretación.
+    bg.add_task(_analizar_en_segundo_plano, base.cliente_id)
 
     return ImportResponse(
-        cliente_id=out.cliente_id,
-        nombre=out.nombre,
-        nickname=out.nickname,
-        extraction=out.extraction,
-        pedidos_added=out.pedidos_added,
-        telefono_pendiente=out.telefono_pendiente,
-        requiere_revision=out.requiere_revision,
-        media=out.media,
-        metodo_extraccion=out.metodo_extraccion,
-        csv_pending=out.csv_pending,
+        cliente_id=base.cliente_id,
+        nombre=base.nombre,
+        telefono_pendiente=base.telefono_pendiente,
+        media=base.media,
+        estado_analisis="pendiente",
     )
+
+
+class ReanalizarRequest(BaseModel):
+    cliente_id: str
+
+
+@router.post("/clientes/{cliente_id}/reanalizar")
+async def reanalizar(cliente_id: str) -> dict:
+    """Vuelve a correr la cascada de modelos sobre la evidencia del cliente."""
+    cfg = get_config()
+    try:
+        return await analizar_cliente(cfg, cliente_id)
+    except ImportError_ as exc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(exc)) from exc
 
 
 @router.get("/dashboard")

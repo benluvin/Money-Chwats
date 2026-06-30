@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from . import __version__
 from .config import get_config
-from .routes import capture, data, files, health, import_export, process
+from .routes import capture, catalogo, contactos, data, files, health, import_export, process
 
 log = logging.getLogger("money_chwats")
 logging.basicConfig(
@@ -70,6 +70,8 @@ def create_app() -> FastAPI:
     app.include_router(process.router, tags=["process"])
     app.include_router(import_export.router, tags=["import"])
     app.include_router(data.router, tags=["data"])
+    app.include_router(catalogo.router, tags=["catalogo"])
+    app.include_router(contactos.router, tags=["contactos"])
     return app
 
 

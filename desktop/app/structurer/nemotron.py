@@ -36,8 +36,9 @@ class NemotronStructurer:
 
     nombre = "nemotron"
 
-    def __init__(self, cloud: CloudConfig, privacy: PrivacyConfig) -> None:
+    def __init__(self, cloud: CloudConfig, privacy: PrivacyConfig, modelo: str | None = None) -> None:
         self.cloud = cloud
+        self.modelo = modelo or cloud.model
         self.anon = Anonymizer(
             AnonymizerConfig(
                 redact_phones=privacy.redact_phones,
@@ -73,9 +74,11 @@ class NemotronStructurer:
         blindado = self.anon.anonymize(fuente.texto_completo, known_names=known)
         log.info("Nemotron: enviando texto blindado (%d datos ocultos)", blindado.replacements)
 
-        user_msg = USER_INSTRUCTION_TEXT.format(conversacion=blindado.text)
+        user_msg = USER_INSTRUCTION_TEXT.format(
+            conversacion=blindado.text, catalogo=context.catalogo_texto
+        )
         payload = {
-            "model": self.cloud.model,
+            "model": self.modelo,
             "messages": [
                 {"role": "system", "content": SYSTEM_PROMPT_TEXT},
                 {"role": "user", "content": user_msg},

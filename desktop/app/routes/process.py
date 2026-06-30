@@ -112,27 +112,66 @@ async def process_capture(capture_id: str) -> ProcessResponse:
     # 2. Estructurar (reglas / nemotron / local)
     structurer = build_structurer(cfg)
     fecha_captura = datetime.fromisoformat(captura_row["fecha_captura"])
+    from ..pipeline.catalogo import texto_para_prompt
     ctx = StructureContext(
         nombre_contacto=None,
         fecha_captura=fecha_captura.date(),
         moneda_default=cfg.locale.default_currency,
+        catalogo_texto=texto_para_prompt(cfg),
     )
+    # Si Nemotron falla, caemos a reglas offline para no perder el cliente.
+    from ..structurer.rules import RulesStructurer
+    backend_usado = structurer.nombre
+    hubo_fallback = False
     try:
         extraction = await structurer.structure(fuente, context=ctx)
+        backend_usado = getattr(structurer, "ultimo_backend", "") or backend_usado
     except StructurerError as exc:
-        raise HTTPException(status.HTTP_502_BAD_GATEWAY, str(exc)) from exc
+        log.warning("Estructurador '%s' falló (%s) → fallback offline a reglas", structurer.nombre, exc)
+        extraction = await RulesStructurer().structure(fuente, context=ctx)
+        backend_usado = "rules(fallback)"
+        hubo_fallback = True
 
-    metodo = f"ocr+{structurer.nombre}"
+    metodo = f"ocr+{backend_usado}"
     modelo = cfg.cloud.model if structurer.nombre == "nemotron" else (
         cfg.llm.model if structurer.nombre == "local" else "reglas"
     )
 
     # 3. IDs + filas CSV
-    phone = extraction.cliente.telefono or ""
-    name = extraction.cliente.nombre or ""
+    # Teléfono SOLO si tiene forma real (no números random del chat).
+    from ..utils.telefono import normalizar_telefono
+    phone = normalizar_telefono(extraction.cliente.telefono) or ""
+    # NOMBRE: del encabezado (DOM). PERO si el encabezado es solo un número
+    # (contacto no guardado) o no llegó, usamos el nombre que el modelo sacó del
+    # cuerpo del chat (presentación, nombre de envío, cómo lo llaman).
+    from ..utils.telefono import es_telefono
+    header = (captura_row.get("contact_name") or "").strip()
+    llm_name = (extraction.cliente.nombre or "").strip()
+    if header and not es_telefono(header):
+        name = header
+    elif llm_name and not es_telefono(llm_name):
+        name = llm_name  # nombre inferido del cuerpo
+    else:
+        name = header or llm_name or ""
+
+    # Cruce con la AGENDA: SOLO completar teléfono que falta. Nunca cambia el nombre.
+    from ..pipeline.contactos import buscar as buscar_contacto
+    if not phone:
+        _match = buscar_contacto(cfg, nombre=name or None, telefono=None)
+        if _match and _match.get("telefono"):
+            phone = _match["telefono"]
     seed = phone or f"{name}|{captura_row.get('url', '')}"
     cliente_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, f"cliente:{seed}"))
     rel_img = captura_row["ruta_imagen"]
+    # El nombre del encabezado MANDA en la fila del cliente.
+    extraction.cliente.nombre = name
+
+    # Evidencia por cliente_id (para el botón "Actualizar" / reanalizar).
+    try:
+        from ..utils.paths import exports_dir
+        (exports_dir(root) / f"{cliente_id}.txt").write_text(fuente.texto_completo, encoding="utf-8")
+    except OSError:
+        pass
 
     redacted = ""
     if phone and len(phone) > 6:
@@ -140,7 +179,7 @@ async def process_capture(capture_id: str) -> ProcessResponse:
 
     monto_total_pedidos = sum((p.monto_total or 0.0) for p in extraction.pedidos) or None
     thr = cfg.extraction.review_threshold
-    requiere_revision = extraction.cliente.confianza_extraccion < thr or any(
+    requiere_revision = hubo_fallback or extraction.cliente.confianza_extraccion < thr or any(
         p.confianza_extraccion < thr for p in extraction.pedidos
     )
 
@@ -156,6 +195,8 @@ async def process_capture(capture_id: str) -> ProcessResponse:
         fecha_captura=fecha_captura,
         modelo_llm=modelo,
         metodo_extraccion=metodo,
+        telefono_pendiente=not bool(phone),
+        estado_analisis="fallback" if hubo_fallback else "completo",
     )
 
     pedido_dicts = []

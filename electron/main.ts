@@ -125,7 +125,7 @@ ipcMain.handle('select-txt', async () => {
   const result = await dialog.showOpenDialog(mainWindow!, {
     title: 'Seleccionar exportación de WhatsApp',
     properties: ['openFile', 'multiSelections'],
-    filters: [{ name: 'Exportación WhatsApp (.txt)', extensions: ['txt'] }],
+    filters: [{ name: 'Exportación WhatsApp', extensions: ['txt', 'zip'] }],
   })
   return result.canceled ? [] : result.filePaths
 })
@@ -141,4 +141,82 @@ ipcMain.handle('import-chat', async (_e, filePath: string) => {
 
 ipcMain.handle('show-in-finder', async (_e, filePath: string) => {
   shell.showItemInFolder(filePath)
+})
+
+// ── Catálogo ────────────────────────────────────────────────────────────────
+ipcMain.handle('get-catalogo', async () => {
+  const res = await fetch(`${API}/catalogo`)
+  return res.json()
+})
+
+ipcMain.handle('save-producto', async (_e, p: Record<string, string>) => {
+  const res = await fetch(`${API}/catalogo`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(p),
+  })
+  return res.json()
+})
+
+ipcMain.handle('delete-producto', async (_e, id: string) => {
+  const res = await fetch(`${API}/catalogo/${encodeURIComponent(id)}`, { method: 'DELETE' })
+  return res.json()
+})
+
+// ── Borrado de clientes / pedidos ─────────────────────────────────────────────
+ipcMain.handle('delete-cliente', async (_e, id: string) => {
+  const res = await fetch(`${API}/clientes/${encodeURIComponent(id)}`, { method: 'DELETE' })
+  return res.json()
+})
+
+ipcMain.handle('delete-pedido', async (_e, id: string) => {
+  const res = await fetch(`${API}/pedidos/${encodeURIComponent(id)}`, { method: 'DELETE' })
+  return res.json()
+})
+
+ipcMain.handle('edit-cliente', async (_e, id: string, cambios: Record<string, string>) => {
+  const res = await fetch(`${API}/clientes/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(cambios),
+  })
+  return res.json()
+})
+
+ipcMain.handle('edit-pedido', async (_e, id: string, cambios: Record<string, string>) => {
+  const res = await fetch(`${API}/pedidos/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(cambios),
+  })
+  return res.json()
+})
+
+// ── Agenda de contactos ───────────────────────────────────────────────────────
+ipcMain.handle('select-agenda', async () => {
+  const result = await dialog.showOpenDialog(mainWindow!, {
+    title: 'Seleccionar agenda de contactos',
+    properties: ['openFile'],
+    filters: [{ name: 'Agenda (vCard / Google CSV)', extensions: ['vcf', 'csv'] }],
+  })
+  return result.canceled ? null : result.filePaths[0]
+})
+
+ipcMain.handle('import-agenda', async (_e, path: string) => {
+  const res = await fetch(`${API}/contactos/importar`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ path }),
+  })
+  return res.json()
+})
+
+ipcMain.handle('get-contactos', async () => {
+  const res = await fetch(`${API}/contactos`)
+  return res.json()
+})
+
+ipcMain.handle('reanalizar-cliente', async (_e, id: string) => {
+  const res = await fetch(`${API}/clientes/${encodeURIComponent(id)}/reanalizar`, { method: 'POST' })
+  return res.json()
 })

@@ -28,7 +28,16 @@ def build_structurer(cfg: AppConfig) -> Structurer:
             return RulesStructurer()
         from .nemotron import NemotronStructurer
 
-        return NemotronStructurer(cfg.cloud, cfg.privacy)
+        # Cascada: modelo primario → modelo backup (gratis). Si ambos caen, el
+        # pipeline cae a reglas offline (lo maneja import_pipeline / process).
+        eslabones = [NemotronStructurer(cfg.cloud, cfg.privacy, modelo=cfg.cloud.model)]
+        if cfg.cloud.backup_model and cfg.cloud.backup_model != cfg.cloud.model:
+            eslabones.append(NemotronStructurer(cfg.cloud, cfg.privacy, modelo=cfg.cloud.backup_model))
+        if len(eslabones) == 1:
+            return eslabones[0]
+        from .cascade import CascadeStructurer
+
+        return CascadeStructurer(eslabones)
 
     if backend == "local":
         from .local_tiny import LocalTinyStructurer

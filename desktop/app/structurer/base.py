@@ -20,6 +20,7 @@ class StructureContext:
     nombre_contacto: str | None = None
     fecha_captura: date | None = None
     moneda_default: str = "COP"
+    catalogo_texto: str = "(sin catálogo configurado)"
 
 
 @runtime_checkable

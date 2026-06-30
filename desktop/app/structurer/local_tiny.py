@@ -31,7 +31,9 @@ class LocalTinyStructurer:
     async def structure(
         self, fuente: FuenteTexto, *, context: StructureContext
     ) -> ExtractionResult:
-        user_msg = USER_INSTRUCTION_TEXT.format(conversacion=fuente.texto_completo)
+        user_msg = USER_INSTRUCTION_TEXT.format(
+            conversacion=fuente.texto_completo, catalogo=context.catalogo_texto
+        )
         payload = {
             "model": self.llm.model,
             "messages": [

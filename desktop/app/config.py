@@ -63,6 +63,8 @@ class CloudConfig(BaseModel):
     provider: str = "openrouter"
     base_url: str = "https://openrouter.ai/api/v1"
     model: str = "nvidia/nemotron-3-super-120b-a12b:free"
+    # Modelo de respaldo (gratis) si el primario no responde. Vacío = sin backup.
+    backup_model: str = "deepseek/deepseek-chat-v3-0324:free"
     api_key: str = ""
     timeout_seconds: int = 120
 

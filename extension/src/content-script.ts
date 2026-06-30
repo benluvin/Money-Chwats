@@ -194,12 +194,32 @@ function restore(): void {
   state.styleEl = null;
 }
 
+/**
+ * Lee el nombre del contacto del ENCABEZADO de la conversación de WhatsApp Web.
+ * Es la barra superior: [Nombre] · Videollamada · Llamada · Buscar · Menú.
+ * Leemos el DOM (reactivo, sin clics) → nombre EXACTO, sin OCR ni adivinanzas.
+ */
+function getContactName(): string {
+  const header = document.querySelector("#main header");
+  if (!header) return "";
+  // El nombre vive en un span con atributo title dentro del header.
+  const conTitle = header.querySelector<HTMLElement>("span[title]");
+  if (conTitle) {
+    const t = conTitle.getAttribute("title") || conTitle.textContent || "";
+    if (t.trim()) return t.trim();
+  }
+  // Respaldo: primer span con texto del header.
+  const span = header.querySelector<HTMLElement>('span[dir="auto"]');
+  return (span?.textContent || "").trim();
+}
+
 type Msg =
   | { kind: "ping" }
   | { kind: "measure" }
   | { kind: "prepare" }
   | { kind: "scroll-to"; y: number }
-  | { kind: "restore" };
+  | { kind: "restore" }
+  | { kind: "contact-name" };
 
 chrome.runtime.onMessage.addListener((msg: Msg, _sender, sendResponse) => {
   (async () => {
@@ -223,6 +243,9 @@ chrome.runtime.onMessage.addListener((msg: Msg, _sender, sendResponse) => {
         case "restore":
           restore();
           sendResponse({ ok: true });
+          return;
+        case "contact-name":
+          sendResponse({ ok: true, name: getContactName() });
           return;
       }
     } catch (e) {

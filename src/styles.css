@@ -388,3 +388,70 @@ body {
 }
 .stat-row:last-child { border-bottom: none; }
 .stat-row b { color: var(--gold); }
+
+/* ── Acciones de fila (borrar) ──────────────────────────── */
+.tabla td.acciones { text-align: center; width: 44px; }
+
+.btn-del {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  opacity: 0.35;
+  transition: opacity 0.15s, transform 0.1s;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.btn-del:hover { opacity: 1; transform: scale(1.15); background: #3a1a1a; }
+
+/* ── Catálogo: formulario de alta ───────────────────────── */
+.cat-form { gap: 8px; }
+
+.btn-add {
+  background: var(--gold);
+  color: #1a1008;
+  border: none;
+  padding: 6px 16px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+}
+.btn-add:hover { opacity: 0.85; }
+.btn-add:disabled { opacity: 0.4; cursor: default; }
+
+/* ── Edición inline ─────────────────────────────────────── */
+.cell-input {
+  background: #15110a;
+  border: 1px solid var(--gold-dim);
+  border-radius: 4px;
+  color: var(--text);
+  padding: 3px 6px;
+  font-size: 12px;
+  width: 100%;
+  outline: none;
+}
+.cell-input:focus { border-color: var(--gold); }
+.cell-num, .cell-qty { text-align: right; }
+.cell-pair { display: flex; gap: 4px; }
+.cell-pair .cell-qty { max-width: 56px; }
+
+.flag.edited { color: var(--green); }
+.flag.analizando { animation: girar 1.2s linear infinite; display: inline-block; }
+@keyframes girar { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+
+.btn-edit, .btn-ok {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  opacity: 0.4;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.btn-edit:hover { opacity: 1; transform: scale(1.15); background: #2a2418; }
+.btn-ok { opacity: 0.8; color: var(--green); }
+.btn-ok:hover { opacity: 1; transform: scale(1.2); background: #1a3d2a; }

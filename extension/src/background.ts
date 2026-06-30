@@ -239,15 +239,42 @@ async function captureActiveTab(): Promise<{
 
   const parts = await captureFullPage(tab.id, tab.windowId);
 
+  // Nombre del encabezado de la conversación (DOM, exacto).
+  let contactName: string | null = null;
+  try {
+    const r = await tabAsk<{ ok: true; name: string }>(tab.id, { kind: "contact-name" });
+    contactName = r.name?.trim() || null;
+  } catch {
+    contactName = null;
+  }
+
   const payload: CapturePayload = {
     client_version: VERSION,
     captured_at: new Date().toISOString(),
     tab_url: tab.url ?? null,
     tab_title: tab.title ?? null,
+    contact_name: contactName,
     screenshot_parts_b64: parts,
   };
   const r = await desktop.capture(payload);
   return { capture_id: r.capture_id, png_path_abs: r.png_path_abs };
+}
+
+// Captura + procesa con IA en un solo paso. La captura queda guardada aunque el
+// procesado falle; en ese caso devolvemos processError para informarlo.
+async function captureAndProcess(): Promise<{
+  capture_id: string;
+  png_path_abs: string;
+  result?: unknown;
+  processError?: string;
+}> {
+  const cap = await captureActiveTab();
+  try {
+    const result = await desktop.process(cap.capture_id);
+    return { ...cap, result };
+  } catch (e) {
+    return { ...cap, processError: (e as Error)?.message ?? "error al procesar" };
+  }
 }
 
 async function flashBadge(success: boolean): Promise<void> {
@@ -273,8 +300,8 @@ chrome.runtime.onMessage.addListener((msg: PopupRequest, _sender, sendResponse) 
           return;
         }
         case "capture-now": {
-          const r = await captureActiveTab();
-          await flashBadge(true);
+          const r = await captureAndProcess();
+          await flashBadge(!r.processError);
           sendResponse({ ok: true, ...r });
           return;
         }
@@ -309,8 +336,8 @@ chrome.runtime.onMessage.addListener((msg: PopupRequest, _sender, sendResponse) 
 chrome.commands.onCommand.addListener(async (command) => {
   if (command !== "capture-current-chat") return;
   try {
-    await captureActiveTab();
-    await flashBadge(true);
+    const r = await captureAndProcess();
+    await flashBadge(!r.processError);
   } catch (e) {
     console.error("[money-chwats] capture failed:", e);
     await flashBadge(false);

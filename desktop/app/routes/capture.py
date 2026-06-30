@@ -47,6 +47,7 @@ def capture(req: CaptureRequest) -> CaptureResponse:
         ruta_imagen=rel,
         url=req.tab_url or "",
         titulo=req.tab_title or "",
+        contact_name=req.contact_name or "",
         procesado=False,
     )
 

@@ -93,9 +93,12 @@ CLIENTES_COLUMNS: list[str] = [
     "videos_detectados",
     "multimedia_pendiente",
     "ruta_imagen_evidencia",
+    "fecha_creacion",
     "fecha_captura",
     "modelo_llm",
     "metodo_extraccion",
+    "estado_analisis",
+    "editado_manualmente",
     "version_schema",
 ]
 
@@ -162,6 +165,8 @@ def cliente_row_dict(
     audios_detectados: int = 0,
     imagenes_detectados: int = 0,
     videos_detectados: int = 0,
+    fecha_creacion: datetime | None = None,
+    estado_analisis: str = "completo",
 ) -> dict[str, str]:
     dias = 0
     if extracted.primer_mensaje_fecha and extracted.ultimo_mensaje_fecha:
@@ -196,9 +201,12 @@ def cliente_row_dict(
         "confianza_extraccion": extracted.confianza_extraccion,
         "requiere_revision": requiere_revision,
         "ruta_imagen_evidencia": ruta_imagen_evidencia,
+        "fecha_creacion": fecha_creacion or fecha_captura,
         "fecha_captura": fecha_captura,
         "modelo_llm": modelo_llm,
         "metodo_extraccion": metodo_extraccion,
+        "estado_analisis": estado_analisis,
+        "editado_manualmente": False,
         "version_schema": CLIENTES_SCHEMA_VERSION,
     }
     return {col: _csv_value(raw.get(col)) for col in CLIENTES_COLUMNS}
